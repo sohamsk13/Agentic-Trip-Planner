@@ -1,0 +1,64 @@
+components/
+│
+├── ui/
+│   ├── Button.tsx
+│   ├── Card.tsx
+│   ├── Chip.tsx
+│
+├── timeline/
+│   ├── Timeline.tsx
+│   ├── DaySection.tsx
+│   ├── ActivityCard.tsx
+│
+├── map/
+│   ├── MapView.tsx
+│   ├── MarkerLayer.tsx
+│   ├── RouteLayer.tsx
+│
+├── chat/
+│   ├── ChatWindow.tsx
+│   ├── MessageBubble.tsx
+│
+├── panels/
+│   ├── TripSummary.tsx
+│   ├── BudgetPanel.tsx
+│   ├── TripDNA.tsx 
+
+🟦 Timeline
+Renders itinerary
+Handles click → map sync
+🗺 Map
+Leaflet integration
+Shows markers + routes
+🤖 Chat
+Sends modification requests
+Updates trip dynamically 
+
+
+User Input
+   ↓
+tripApi.ts (AI backend)
+   ↓
+transformTripData.ts
+   ↓
+store (Zustand)
+   ↓
+Timeline + Map
+   ↓
+User Interaction
+   ↓
+Map Sync / Chat Modify
+
+
+Step 1:
+Layout + Timeline UI
+Step 2:
+Leaflet Map
+Step 3:
+Connect Timeline → Map
+Step 4:
+Add placesDB
+Step 5:
+Add AI API
+Step 6:
+Add chat + filters
