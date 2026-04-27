@@ -95,7 +95,7 @@ export default function BudgetBreakdown({ trip }: BudgetBreakdownProps) {
             </CardHeader>
             <CardContent className="space-y-2">
               {pieData.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 hover:bg-slate-700/50 rounded transition-colors">
+                <div key={item.category || idx} className="flex items-center justify-between p-2 hover:bg-slate-700/50 rounded transition-colors">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
                     <span className="text-sm text-gray-300 truncate">{item.category}</span>
@@ -147,7 +147,7 @@ export default function BudgetBreakdown({ trip }: BudgetBreakdownProps) {
           </CardHeader>
           <CardContent className="space-y-2">
             {(trip.accommodation ?? []).map((stay, idx) => (
-              <div key={idx} className="p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">
+              <div key={stay.name_or_area || idx} className="p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-white">{stay.name_or_area}</p>
                   <span className="text-xs text-blue-400 whitespace-nowrap">{stay.typical_price_range}</span>

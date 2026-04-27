@@ -3,92 +3,108 @@
 import { useState, useEffect } from 'react';
 import { TripPlanResponse } from '@/lib/api';
 
-interface TripHistoryItem {
+export interface TripHistoryItem {
   id: string;
   data: TripPlanResponse;
-  createdAt: Date;
+  createdAt: string; // ISO string — safe for JSON serialization
   mode: string;
 }
 
-const STORAGE_KEY = 'tripPlurge_history';
-const MAX_TRIPS = 10;
+/** Compact summary stored in localStorage (avoids 5MB limit) */
+interface TripSummary {
+  id: string;
+  destination: string;
+  budgetTotal: number;
+  budgetCurrency: string;
+  createdAt: string;
+  mode: string;
+}
+
+const SUMMARY_KEY = 'tripPlurge_summaries';
+const DATA_PREFIX = 'tripPlurge_data_';
+const MAX_TRIPS = 8;
+
+function readSummaries(): TripSummary[] {
+  try {
+    const raw = localStorage.getItem(SUMMARY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSummaries(summaries: TripSummary[]) {
+  try {
+    localStorage.setItem(SUMMARY_KEY, JSON.stringify(summaries));
+  } catch { /* quota exceeded — silently skip */ }
+}
+
+function readTripData(id: string): TripPlanResponse | null {
+  try {
+    const raw = sessionStorage.getItem(`${DATA_PREFIX}${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeTripData(id: string, data: TripPlanResponse) {
+  try {
+    sessionStorage.setItem(`${DATA_PREFIX}${id}`, JSON.stringify(data));
+  } catch { /* quota exceeded */ }
+}
 
 export function useTripHistory() {
-  const [trips, setTrips] = useState<TripHistoryItem[]>([]);
+  const [summaries, setSummaries] = useState<TripSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load trips from localStorage on mount
   useEffect(() => {
-    const loadHistory = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setTrips(parsed);
-        }
-      } catch (error) {
-        console.error('Error loading trip history:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadHistory();
+    setSummaries(readSummaries());
+    setIsLoading(false);
   }, []);
 
-  // Save trip to history
-  const addTrip = (tripData: TripPlanResponse, mode: string) => {
-    try {
-      const newTrip: TripHistoryItem = {
-        id: Date.now().toString(),
-        data: tripData,
-        createdAt: new Date(),
-        mode,
-      };
-
-      const updated = [newTrip, ...trips].slice(0, MAX_TRIPS);
-      setTrips(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-
-      return newTrip.id;
-    } catch (error) {
-      console.error('Error saving trip to history:', error);
-      return null;
-    }
+  const addTrip = (tripData: TripPlanResponse, mode: string): string => {
+    const id = Date.now().toString();
+    const summary: TripSummary = {
+      id,
+      destination: tripData.destination || tripData.trip_request?.slice(0, 40) || 'Trip',
+      budgetTotal: tripData.budget?.total ?? 0,
+      budgetCurrency: tripData.budget?.currency ?? 'INR',
+      createdAt: new Date().toISOString(),
+      mode,
+    };
+    writeTripData(id, tripData);
+    const updated = [summary, ...summaries].slice(0, MAX_TRIPS);
+    setSummaries(updated);
+    writeSummaries(updated);
+    return id;
   };
 
-  // Delete trip from history
   const deleteTrip = (id: string) => {
-    try {
-      const updated = trips.filter((trip) => trip.id !== id);
-      setTrips(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (error) {
-      console.error('Error deleting trip:', error);
-    }
+    try { sessionStorage.removeItem(`${DATA_PREFIX}${id}`); } catch { /* ignore */ }
+    const updated = summaries.filter((s) => s.id !== id);
+    setSummaries(updated);
+    writeSummaries(updated);
   };
 
-  // Clear all history
   const clearHistory = () => {
-    try {
-      setTrips([]);
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (error) {
-      console.error('Error clearing history:', error);
-    }
+    summaries.forEach((s) => {
+      try { sessionStorage.removeItem(`${DATA_PREFIX}${s.id}`); } catch { /* ignore */ }
+    });
+    setSummaries([]);
+    try { localStorage.removeItem(SUMMARY_KEY); } catch { /* ignore */ }
   };
 
-  // Get trip by ID
-  const getTrip = (id: string) => {
-    return trips.find((trip) => trip.id === id);
-  };
+  // Reconstruct TripHistoryItem on demand (data from sessionStorage)
+  const trips: TripHistoryItem[] = summaries.map((s) => ({
+    id: s.id,
+    data: readTripData(s.id) ?? ({
+      destination: s.destination,
+      budget: { total: s.budgetTotal, currency: s.budgetCurrency, breakdown: [], daily_breakdown: [] },
+    } as unknown as TripPlanResponse),
+    createdAt: s.createdAt,
+    mode: s.mode,
+  }));
 
-  return {
-    trips,
-    isLoading,
-    addTrip,
-    deleteTrip,
-    clearHistory,
-    getTrip,
-  };
+  return { trips, isLoading, addTrip, deleteTrip, clearHistory };
 }

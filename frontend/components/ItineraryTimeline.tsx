@@ -51,7 +51,7 @@ export default function ItineraryTimeline({
       <div className="flex gap-2 p-4 border-b border-slate-700 overflow-x-auto flex-shrink-0">
         {itinerary.map((day, idx) => (
           <Button
-            key={idx}
+            key={day.day_number ?? idx}
             onClick={() => onDayChange?.(idx)}
             variant={idx === selectedDayIndex ? 'default' : 'outline'}
             className={`whitespace-nowrap px-4 py-2 rounded-lg font-semibold text-sm flex-shrink-0 ${
@@ -85,7 +85,7 @@ export default function ItineraryTimeline({
                 const colorClass = iconColors[activity.icon] ?? iconColors.activity;
 
                 return (
-                  <div key={idx} className="flex gap-4 relative">
+                  <div key={`${activity.title}-${idx}`} className="flex gap-4 relative">
                     {/* Timeline connector */}
                     <div className="flex flex-col items-center flex-shrink-0">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg relative z-10 ${colorClass}`}>

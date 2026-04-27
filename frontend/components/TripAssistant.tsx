@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
+'use client';
+
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Message {
   id: string;
@@ -20,6 +21,12 @@ export default function TripAssistant() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const suggestedQuestions = [
     'Make Day 2 Cheaper',
     'Find Hidden Spots',
@@ -28,10 +35,8 @@ export default function TripAssistant() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!inputValue.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
@@ -43,17 +48,17 @@ export default function TripAssistant() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate assistant response
+    // TODO: wire to real AI endpoint (e.g. POST /api/v1/assistant)
     setTimeout(() => {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        text: 'I understand! Let me help you with that. Based on your trip, I can suggest some adjustments. Would you like me to modify the itinerary?',
+        text: 'I can help refine your trip! For now, try regenerating with a more specific prompt on the home page. Full assistant support coming soon.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
-    }, 800);
+    }, 600);
   };
 
   const handleSuggestedQuestion = (question: string) => {
@@ -106,6 +111,7 @@ export default function TripAssistant() {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Suggested Questions */}

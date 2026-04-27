@@ -1,14 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Search,
-  Settings,
-  Bell,
-  User,
-  MoreHorizontal,
-} from 'lucide-react';
+import { Share2, Check } from 'lucide-react';
 
 interface TripHeaderProps {
   destination: string;
@@ -17,85 +11,65 @@ interface TripHeaderProps {
 }
 
 const modes = [
-  { id: 'chill', label: 'Chill Mode', icon: '😎' },
-  { id: 'party', label: 'Party Mode', icon: '🎉' },
-  { id: 'budget', label: 'Budget Mode', icon: '💰' },
-  { id: 'explore', label: 'Explore Mode', icon: '🗺️' },
+  { id: 'chill', label: 'Chill', icon: '😎' },
+  { id: 'party', label: 'Party', icon: '🎉' },
+  { id: 'budget', label: 'Budget', icon: '💰' },
+  { id: 'explore', label: 'Explore', icon: '🗺️' },
 ];
 
-export default function TripHeader({
-  destination,
-  mode,
-  onModeChange,
-}: TripHeaderProps) {
-  return (
-    <header className="bg-slate-900 border-b border-slate-700 p-4">
-      <div className="flex items-center justify-between mb-4">
-        {/* Title and destination */}
-        <div className="flex items-center gap-2">
-          <span className="text-blue-400 text-xl">🌴</span>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Your {destination} Trip</h1>
-          </div>
-        </div>
+export default function TripHeader({ destination, mode, onModeChange }: TripHeaderProps) {
+  const [copied, setCopied] = useState(false);
 
-        {/* Right controls */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-          >
-            <Search className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-          >
-            <Bell className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-400 hover:text-white"
-          >
-            <User className="w-5 h-5" />
-          </Button>
+  const handleShare = async () => {
+    const text = `Check out my AI-planned trip to ${destination}! 🌍`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `Trip to ${destination}`, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  return (
+    <header className="bg-slate-900 border-b border-slate-700 px-4 py-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-blue-400 text-xl flex-shrink-0">🌴</span>
+          <h1 className="text-xl font-bold text-white truncate">
+            {destination} Trip
+          </h1>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleShare}
+          className="text-gray-400 hover:text-white flex-shrink-0 gap-1.5"
+        >
+          {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
+          <span className="text-xs hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
+        </Button>
       </div>
 
-      {/* Mode selector */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
         {modes.map((m) => (
           <Button
             key={m.id}
             onClick={() => onModeChange(m.id)}
             variant={mode === m.id ? 'default' : 'outline'}
-            className={`text-sm font-semibold px-3 py-1 rounded-lg transition-colors ${
+            size="sm"
+            className={`whitespace-nowrap text-xs font-semibold flex-shrink-0 ${
               mode === m.id
                 ? 'bg-blue-600 hover:bg-blue-700 text-white'
                 : 'bg-slate-800 border-slate-700 text-gray-300 hover:bg-slate-700'
             }`}
           >
-            <span className="mr-2">{m.icon}</span>
+            <span className="mr-1">{m.icon}</span>
             {m.label}
           </Button>
         ))}
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-slate-800 border-slate-700 text-gray-300 hover:bg-slate-700"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
       </div>
     </header>
   );
