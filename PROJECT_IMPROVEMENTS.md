@@ -3,6 +3,14 @@
 This document outlines how to elevate the project: product quality, reliability, UX, and technical depth. The backend now uses **LLM-only reasoning** (no live web search) so plans stay consistent when external search APIs fail—always emphasize **uncertainty** and **non‑binding estimates** in copy and UI.
 
 ---
+---
+## 1. Product and positioning
+
+- **Clear promise**: Market as an “AI itinerary sketch + budget bands” tool, not live booking or guaranteed prices. Reduces disappointment and builds trust.
+- **Differentiators**: Focus on structured JSON output, export/share, and a polished viewer—few trip demos do all three well.
+- **Tone**: Friendly but cautious copy where the model admits limits (`uncertainty_notes` is first-class).
+
+---
 
 ## 1. Product and positioning
 
