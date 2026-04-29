@@ -59,7 +59,7 @@ export default function TripPage() {
   }
 
   const { budget } = tripData;
-  const currencySymbol = budget.currency === 'INR' ? 'â‚¹' : budget.currency;
+  const currencySymbol = budget.currency === 'INR' ? '₹' : budget.currency;
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col overflow-hidden">

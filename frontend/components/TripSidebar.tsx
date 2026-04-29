@@ -4,7 +4,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  MapPin,
   MessageSquare,
   Settings,
   ChevronDown,
@@ -12,10 +11,10 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Trip } from '@/lib/types';
+import { TripPlanResponse } from '@/lib/api';
 
 interface TripSidebarProps {
-  trip: Trip;
+  trip: TripPlanResponse;
 }
 
 export default function TripSidebar({ trip }: TripSidebarProps) {
@@ -118,15 +117,12 @@ export default function TripSidebar({ trip }: TripSidebarProps) {
           {trip.itinerary.slice(0, 3).map((day, idx) => (
             <div
               key={idx}
-              className="h-20 rounded-lg bg-cover bg-center relative group cursor-pointer overflow-hidden"
-              style={{
-                backgroundImage: `url('${day.image}')`,
-              }}
+              className="h-20 rounded-lg bg-slate-700 relative group cursor-pointer overflow-hidden"
             >
               <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-white text-xs font-semibold">
-                  Day {day.day}
+                  Day {day.day_number}
                 </span>
               </div>
             </div>
@@ -155,7 +151,6 @@ export default function TripSidebar({ trip }: TripSidebarProps) {
               key={idx}
               className="flex gap-3 p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <div className="text-xl mt-0.5">{activity.mood}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-400">{activity.time}</p>
                 <p className="text-sm font-semibold text-white truncate">
@@ -167,9 +162,7 @@ export default function TripSidebar({ trip }: TripSidebarProps) {
           ))}
         </div>
 
-        {trip.itinerary[0].image && (
-          <div className="mt-4 h-24 rounded-lg bg-cover bg-center" />
-        )}
+
       </div>
 
       {/* Trip Assistant Chat */}
