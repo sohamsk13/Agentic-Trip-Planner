@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TripPlanResponse } from '@/lib/api';
+import { normalizeTripPlanResponse, TripPlanResponse } from '@/lib/api';
 
 export interface TripHistoryItem {
   id: string;
@@ -42,7 +42,7 @@ function writeSummaries(summaries: TripSummary[]) {
 function readTripData(id: string): TripPlanResponse | null {
   try {
     const raw = sessionStorage.getItem(`${DATA_PREFIX}${id}`);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? normalizeTripPlanResponse(JSON.parse(raw)) : null;
   } catch {
     return null;
   }
@@ -99,8 +99,18 @@ export function useTripHistory() {
   const trips: TripHistoryItem[] = summaries.map((s) => ({
     id: s.id,
     data: readTripData(s.id) ?? ({
+      schema_version: '1.0',
+      trip_request: '',
       destination: s.destination,
+      summary: '',
+      coordinates: { lat: 0, lng: 0 },
+      accommodation: [],
+      itinerary: [],
       budget: { total: s.budgetTotal, currency: s.budgetCurrency, breakdown: [], daily_breakdown: [] },
+      locations: [],
+      tips_and_caveats: [],
+      sources_from_research: [],
+      uncertainty_notes: '',
     } as unknown as TripPlanResponse),
     createdAt: s.createdAt,
     mode: s.mode,
