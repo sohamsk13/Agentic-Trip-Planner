@@ -1,9 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_ENDPOINT = '/api/v1/trips/plan';
 
-export interface TripPlanRequest {
-  trip_request: string;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ActivityItem {
   time: string;
@@ -69,191 +67,179 @@ export interface TripPlanResponse {
   uncertainty_notes: string;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function parseAmountRange(value: unknown): number {
   if (typeof value === 'number') return value;
   if (!value) return 0;
-
   const matches = String(value).replace(/[₹,]/g, '').match(/\d+(\.\d+)?/g);
   if (!matches) return 0;
   if (matches.length === 1) return Number(matches[0]) || 0;
-
   return ((Number(matches[0]) || 0) + (Number(matches[matches.length - 1]) || 0)) / 2;
 }
 
 function guessIcon(text: string): string {
-  const normalized = text.toLowerCase();
-
-  if (normalized.includes('hotel') || normalized.includes('check') || normalized.includes('accommodation')) return 'hotel';
-  if (normalized.includes('beach') || normalized.includes('sea') || normalized.includes('swim') || normalized.includes('dolphin')) return 'beach';
-  if (normalized.includes('food') || normalized.includes('dinner') || normalized.includes('lunch') || normalized.includes('breakfast') || normalized.includes('eat') || normalized.includes('cuisine') || normalized.includes('shack')) return 'food';
-  if (normalized.includes('sunset') || normalized.includes('sunrise')) return 'sunset';
-  if (normalized.includes('flight') || normalized.includes('train') || normalized.includes('transfer') || normalized.includes('airport') || normalized.includes('depart') || normalized.includes('arrive')) return 'transport';
-
+  const t = text.toLowerCase();
+  if (t.includes('hotel') || t.includes('check-in') || t.includes('accommodation') || t.includes('resort') || t.includes('stay')) return 'hotel';
+  if (t.includes('beach') || t.includes('sea') || t.includes('swim') || t.includes('dolphin') || t.includes('snorkel') || t.includes('lagoon')) return 'beach';
+  if (t.includes('food') || t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('eat') || t.includes('cuisine') || t.includes('shack') || t.includes('restaurant') || t.includes('cafe')) return 'food';
+  if (t.includes('sunset') || t.includes('sunrise')) return 'sunset';
+  if (t.includes('flight') || t.includes('train') || t.includes('transfer') || t.includes('airport') || t.includes('depart') || t.includes('arrive') || t.includes('bus') || t.includes('taxi')) return 'transport';
   return 'activity';
 }
 
-function extractDestination(raw: Record<string, unknown>): string {
-  if (typeof raw.destination === 'string' && raw.destination.trim()) {
-    return raw.destination.trim();
+function extractDestination(source: Record<string, unknown>): string {
+  if (typeof source.destination === 'string' && source.destination.trim()) {
+    return source.destination.trim();
   }
-
-  const requestText = String(raw.trip_request || raw.summary || '');
-  const match = requestText.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/);
-  return match ? match[1] : requestText.slice(0, 40) || 'Your Trip';
+  const text = String(source.trip_request || source.summary || '');
+  // Try to find a capitalized place name
+  const match = text.match(/\b(in|to|at|visit)\s+([A-Z][a-zA-Z\s]{2,20}?)(?:\s+with|\s+for|\s*,|\s*\.|\s*$)/i);
+  if (match) return match[2].trim();
+  const cap = text.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\b/);
+  return cap ? cap[1] : text.slice(0, 30) || 'Your Trip';
 }
 
+// ─── Normalizer (handles both old and new backend schema) ─────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeTripPlanResponse(raw: unknown): TripPlanResponse {
-  if (!raw || typeof raw !== 'object') {
-    throw new Error('Invalid trip data received from server');
-  }
+  if (!raw || typeof raw !== 'object') throw new Error('Invalid trip data');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const s = raw as Record<string, any>;
 
-  const source = raw as Record<string, any>;
-
+  // coordinates
   let coordinates: Coordinates = { lat: 0, lng: 0 };
-  if (Array.isArray(source.coordinates) && source.coordinates.length >= 2) {
+  if (Array.isArray(s.coordinates) && s.coordinates.length >= 2) {
+    coordinates = { lat: Number(s.coordinates[0]) || 0, lng: Number(s.coordinates[1]) || 0 };
+  } else if (s.coordinates && typeof s.coordinates === 'object') {
     coordinates = {
-      lat: Number(source.coordinates[0]) || 0,
-      lng: Number(source.coordinates[1]) || 0,
-    };
-  } else if (source.coordinates && typeof source.coordinates === 'object') {
-    coordinates = {
-      lat: Number(source.coordinates.lat ?? source.coordinates.latitude ?? 0),
-      lng: Number(source.coordinates.lng ?? source.coordinates.longitude ?? 0),
+      lat: Number(s.coordinates.lat ?? s.coordinates.latitude ?? 0),
+      lng: Number(s.coordinates.lng ?? s.coordinates.longitude ?? 0),
     };
   }
 
-  let budget: TripPlanResponse['budget'] = {
-    total: 0,
-    currency: 'INR',
-    breakdown: [],
-    daily_breakdown: [],
-  };
-
-  if (Array.isArray(source.budget)) {
-    const breakdown = source.budget.map((item: Record<string, unknown>, index: number) => {
+  // budget — old schema: array of {category, amount_range, notes}
+  //          new schema: {total, currency, breakdown[], daily_breakdown[]}
+  let budget: BudgetSummary = { total: 0, currency: 'INR', breakdown: [], daily_breakdown: [] };
+  if (Array.isArray(s.budget)) {
+    const breakdown: BudgetLineItem[] = s.budget.map((item: Record<string, unknown>, i: number) => {
       const amount = parseAmountRange(item.amount_range ?? item.amount);
       return {
-        category: String(item.category || `Item ${index + 1}`),
+        category: String(item.category || `Item ${i + 1}`),
         amount,
         percentage: 0,
         notes: String(item.notes || item.amount_range || ''),
       };
     });
-
-    const total = breakdown.reduce((sum, item) => sum + item.amount, 0);
-    breakdown.forEach((item) => {
-      item.percentage = total > 0 ? Math.round((item.amount / total) * 100) : 0;
-    });
-
+    const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
+    breakdown.forEach((b) => { b.percentage = total > 0 ? Math.round((b.amount / total) * 100) : 0; });
     budget = { total, currency: 'INR', breakdown, daily_breakdown: [] };
-  } else if (source.budget && typeof source.budget === 'object') {
-    const breakdown = Array.isArray(source.budget.breakdown)
-      ? source.budget.breakdown.map((item: Record<string, unknown>) => ({
+  } else if (s.budget && typeof s.budget === 'object') {
+    const breakdown: BudgetLineItem[] = Array.isArray(s.budget.breakdown)
+      ? s.budget.breakdown.map((item: Record<string, unknown>) => ({
           category: String(item.category || ''),
           amount: Number(item.amount) || parseAmountRange(item.amount_range),
           percentage: Number(item.percentage) || 0,
           notes: String(item.notes || ''),
         }))
       : [];
-
+    const total = Number(s.budget.total) || breakdown.reduce((sum, b) => sum + b.amount, 0);
+    // back-fill percentages if missing
+    if (total > 0 && breakdown.every((b) => b.percentage === 0)) {
+      breakdown.forEach((b) => { b.percentage = Math.round((b.amount / total) * 100); });
+    }
     budget = {
-      total: Number(source.budget.total) || breakdown.reduce((sum, item) => sum + item.amount, 0),
-      currency: String(source.budget.currency || 'INR'),
+      total,
+      currency: String(s.budget.currency || 'INR'),
       breakdown,
-      daily_breakdown: Array.isArray(source.budget.daily_breakdown)
-        ? source.budget.daily_breakdown.map((item: Record<string, unknown>) => ({
-            day: Number(item.day) || 0,
-            spent: Number(item.spent ?? item.spend) || 0,
+      daily_breakdown: Array.isArray(s.budget.daily_breakdown)
+        ? s.budget.daily_breakdown.map((d: Record<string, unknown>) => ({
+            day: Number(d.day) || 0,
+            spent: Number(d.spent ?? d.spend) || 0,
           }))
         : [],
     };
   }
 
-  const itinerary: DayPlanItem[] = Array.isArray(source.itinerary)
-    ? source.itinerary.map((day: Record<string, unknown>, index: number) => ({
-        day_number: Number(day.day_number ?? day.day ?? index + 1),
-        title: String(day.title || `Day ${index + 1}`),
+  // itinerary
+  const itinerary: DayPlanItem[] = Array.isArray(s.itinerary)
+    ? s.itinerary.map((day: Record<string, unknown>, i: number) => ({
+        day_number: Number(day.day_number ?? day.day ?? i + 1),
+        title: String(day.title || `Day ${i + 1}`),
         notes: String(day.notes || day.description || ''),
         activities: Array.isArray(day.activities)
-          ? day.activities.map((activity: unknown, activityIndex: number) => {
-              if (typeof activity === 'string') {
-                return {
-                  time: '',
-                  title: activity,
-                  description: '',
-                  category: 'activity',
-                  icon: guessIcon(activity),
-                };
+          ? day.activities.map((a: unknown, ai: number) => {
+              if (typeof a === 'string') {
+                return { time: '', title: a, description: '', category: 'activity', icon: guessIcon(a) };
               }
-
-              const item = (activity ?? {}) as Record<string, unknown>;
-              const title = String(item.title || `Activity ${activityIndex + 1}`);
-
+              const act = (a ?? {}) as Record<string, unknown>;
+              const title = String(act.title || `Activity ${ai + 1}`);
               return {
-                time: String(item.time || ''),
+                time: String(act.time || ''),
                 title,
-                description: String(item.description || ''),
-                category: String(item.category || 'activity'),
-                icon: String(item.icon || guessIcon(title)),
+                description: String(act.description || ''),
+                category: String(act.category || 'activity'),
+                icon: String(act.icon || guessIcon(title)),
               };
             })
           : [],
       }))
     : [];
 
-  const locations: LocationItem[] = Array.isArray(source.locations)
-    ? source.locations.map((location: Record<string, unknown>, index: number) => ({
-        id: String(location.id || `loc_${index}`),
-        name: String(location.name || ''),
-        description: String(location.description || ''),
-        lat: Number(location.lat ?? location.latitude ?? 0),
-        lng: Number(location.lng ?? location.longitude ?? 0),
-        type: String(location.type || 'activity'),
+  // locations
+  const locations: LocationItem[] = Array.isArray(s.locations)
+    ? s.locations.map((l: Record<string, unknown>, i: number) => ({
+        id: String(l.id || `loc_${i}`),
+        name: String(l.name || ''),
+        description: String(l.description || ''),
+        lat: Number(l.lat ?? l.latitude ?? 0),
+        lng: Number(l.lng ?? l.longitude ?? 0),
+        type: String(l.type || 'activity'),
       }))
     : [];
 
   return {
-    schema_version: String(source.schema_version || '1.0'),
-    trip_request: String(source.trip_request || ''),
-    destination: extractDestination(source),
-    summary: String(source.summary || ''),
+    schema_version: String(s.schema_version || '1.0'),
+    trip_request: String(s.trip_request || ''),
+    destination: extractDestination(s),
+    summary: String(s.summary || ''),
     coordinates,
-    accommodation: Array.isArray(source.accommodation)
-      ? source.accommodation.map((stay: Record<string, unknown>) => ({
-          name_or_area: String(stay.name_or_area || stay.name || ''),
-          notes: String(stay.notes || ''),
-          typical_price_range: String(stay.typical_price_range || ''),
+    accommodation: Array.isArray(s.accommodation)
+      ? s.accommodation.map((a: Record<string, unknown>) => ({
+          name_or_area: String(a.name_or_area || a.name || ''),
+          notes: String(a.notes || ''),
+          typical_price_range: String(a.typical_price_range || ''),
         }))
       : [],
     itinerary,
     budget,
     locations,
-    tips_and_caveats: Array.isArray(source.tips_and_caveats)
-      ? source.tips_and_caveats.map(String)
-      : Array.isArray(source.tips)
-        ? source.tips.map(String)
-        : [],
-    sources_from_research: Array.isArray(source.sources_from_research)
-      ? source.sources_from_research.map((item: Record<string, unknown>) => ({
-          title: String(item.title || ''),
-          url: String(item.url || ''),
+    tips_and_caveats: Array.isArray(s.tips_and_caveats)
+      ? s.tips_and_caveats.map(String)
+      : Array.isArray(s.tips) ? s.tips.map(String) : [],
+    sources_from_research: Array.isArray(s.sources_from_research)
+      ? s.sources_from_research.map((r: Record<string, unknown>) => ({
+          title: String(r.title || ''),
+          url: String(r.url || ''),
         }))
       : [],
-    uncertainty_notes: String(source.uncertainty_notes || ''),
+    uncertainty_notes: String(s.uncertainty_notes || ''),
   };
 }
+
+// ─── API call ─────────────────────────────────────────────────────────────────
 
 export async function generateTripPlan(prompt: string): Promise<TripPlanResponse> {
   let response: Response;
   try {
-    const requestBody: TripPlanRequest = { trip_request: prompt };
     response = await fetch(`${API_BASE_URL}${API_ENDPOINT}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({ trip_request: prompt }),
     });
   } catch {
-    throw new Error('Could not connect to the server. Please check if the backend is running.');
+    throw new Error('Could not connect to the server. Please check if the backend is running on port 8000.');
   }
 
   if (!response.ok) {
@@ -262,7 +248,7 @@ export async function generateTripPlan(prompt: string): Promise<TripPlanResponse
       const err = await response.json();
       if (typeof err.detail === 'string') detail = err.detail;
       else if (Array.isArray(err.detail)) detail = err.detail.map((e: { msg: string }) => e.msg).join(', ');
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
     throw new Error(detail);
   }
 

@@ -6,11 +6,10 @@ import { normalizeTripPlanResponse, TripPlanResponse } from '@/lib/api';
 export interface TripHistoryItem {
   id: string;
   data: TripPlanResponse;
-  createdAt: string; // ISO string — safe for JSON serialization
+  createdAt: string;
   mode: string;
 }
 
-/** Compact summary stored in localStorage (avoids 5MB limit) */
 interface TripSummary {
   id: string;
   destination: string;
@@ -25,33 +24,19 @@ const DATA_PREFIX = 'tripPlurge_data_';
 const MAX_TRIPS = 8;
 
 function readSummaries(): TripSummary[] {
-  try {
-    const raw = localStorage.getItem(SUMMARY_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(SUMMARY_KEY) ?? '[]'); } catch { return []; }
 }
-
-function writeSummaries(summaries: TripSummary[]) {
-  try {
-    localStorage.setItem(SUMMARY_KEY, JSON.stringify(summaries));
-  } catch { /* quota exceeded — silently skip */ }
+function writeSummaries(s: TripSummary[]) {
+  try { localStorage.setItem(SUMMARY_KEY, JSON.stringify(s)); } catch { /* quota */ }
 }
-
 function readTripData(id: string): TripPlanResponse | null {
   try {
-    const raw = sessionStorage.getItem(`${DATA_PREFIX}${id}`);
+    const raw = localStorage.getItem(`${DATA_PREFIX}${id}`);
     return raw ? normalizeTripPlanResponse(JSON.parse(raw)) : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
-
 function writeTripData(id: string, data: TripPlanResponse) {
-  try {
-    sessionStorage.setItem(`${DATA_PREFIX}${id}`, JSON.stringify(data));
-  } catch { /* quota exceeded */ }
+  try { localStorage.setItem(`${DATA_PREFIX}${id}`, JSON.stringify(data)); } catch { /* quota */ }
 }
 
 export function useTripHistory() {
@@ -65,6 +50,7 @@ export function useTripHistory() {
 
   const addTrip = (tripData: TripPlanResponse, mode: string): string => {
     const id = Date.now().toString();
+    writeTripData(id, tripData);
     const summary: TripSummary = {
       id,
       destination: tripData.destination || tripData.trip_request?.slice(0, 40) || 'Trip',
@@ -73,7 +59,6 @@ export function useTripHistory() {
       createdAt: new Date().toISOString(),
       mode,
     };
-    writeTripData(id, tripData);
     const updated = [summary, ...summaries].slice(0, MAX_TRIPS);
     setSummaries(updated);
     writeSummaries(updated);
@@ -81,21 +66,19 @@ export function useTripHistory() {
   };
 
   const deleteTrip = (id: string) => {
-    try { sessionStorage.removeItem(`${DATA_PREFIX}${id}`); } catch { /* ignore */ }
+    try { localStorage.removeItem(`${DATA_PREFIX}${id}`); } catch { /* ignore */ }
     const updated = summaries.filter((s) => s.id !== id);
     setSummaries(updated);
     writeSummaries(updated);
   };
 
   const clearHistory = () => {
-    summaries.forEach((s) => {
-      try { sessionStorage.removeItem(`${DATA_PREFIX}${s.id}`); } catch { /* ignore */ }
-    });
+    summaries.forEach((s) => { try { localStorage.removeItem(`${DATA_PREFIX}${s.id}`); } catch { /* ignore */ } });
     setSummaries([]);
     try { localStorage.removeItem(SUMMARY_KEY); } catch { /* ignore */ }
   };
 
-  // Reconstruct TripHistoryItem on demand (data from sessionStorage)
+  // Build TripHistoryItem list — data loaded from localStorage
   const trips: TripHistoryItem[] = summaries.map((s) => ({
     id: s.id,
     data: readTripData(s.id) ?? ({
@@ -111,7 +94,7 @@ export function useTripHistory() {
       tips_and_caveats: [],
       sources_from_research: [],
       uncertainty_notes: '',
-    } as unknown as TripPlanResponse),
+    } as TripPlanResponse),
     createdAt: s.createdAt,
     mode: s.mode,
   }));

@@ -1,102 +1,60 @@
 export function TripLoadingSkeleton() {
   return (
-    <div className="h-screen bg-slate-950 flex flex-col">
-      {/* Header skeleton */}
-      <div className="border-b border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="w-32 h-8 bg-slate-800 rounded-lg animate-pulse"></div>
-          <div className="w-20 h-8 bg-slate-800 rounded-lg animate-pulse"></div>
+    <div className="h-screen bg-slate-950 flex flex-col overflow-hidden">
+      {/* Nav bar */}
+      <div className="h-10 border-b border-slate-800 flex items-center px-4 gap-3 flex-shrink-0">
+        <div className="w-16 h-4 bg-slate-800 rounded animate-pulse" />
+        <div className="w-px h-4 bg-slate-800" />
+        <div className="w-32 h-4 bg-slate-800 rounded animate-pulse" />
+      </div>
+      {/* Header */}
+      <div className="h-20 border-b border-slate-800 px-4 py-3 flex-shrink-0">
+        <div className="w-48 h-6 bg-slate-800 rounded animate-pulse mb-2" />
+        <div className="flex gap-2">
+          {[1,2,3,4].map((i) => <div key={i} className="w-20 h-7 bg-slate-800 rounded-lg animate-pulse" />)}
         </div>
       </div>
-
-      {/* Main content skeleton */}
-      <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-        {/* Left sidebar skeleton */}
-        <div className="hidden lg:flex lg:w-80 flex-col gap-4">
-          <div className="h-full bg-slate-900 rounded-lg border border-slate-700 p-4">
-            <div className="h-full space-y-4">
-              <div className="h-20 bg-slate-800 rounded-lg animate-pulse"></div>
-              <div className="h-40 bg-slate-800 rounded-lg animate-pulse"></div>
-              <div className="h-20 bg-slate-800 rounded-lg animate-pulse"></div>
-            </div>
+      {/* Main */}
+      <div className="flex-1 flex gap-3 p-3 overflow-hidden">
+        <div className="hidden lg:block w-64 xl:w-72 bg-slate-900 rounded-xl border border-slate-800 animate-pulse flex-shrink-0" />
+        <div className="flex-1 bg-slate-900 rounded-xl border border-slate-800 p-4 space-y-3">
+          <div className="flex gap-2 pb-3 border-b border-slate-800">
+            {[1,2,3,4,5].map((i) => <div key={i} className="w-24 h-8 bg-slate-800 rounded-lg animate-pulse" />)}
           </div>
+          {[1,2,3,4].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="w-9 h-9 bg-slate-800 rounded-xl animate-pulse flex-shrink-0" />
+              <div className="flex-1 h-20 bg-slate-800 rounded-xl animate-pulse" />
+            </div>
+          ))}
         </div>
-
-        {/* Center timeline skeleton */}
-        <div className="flex-1 bg-slate-900 rounded-lg border border-slate-700 overflow-hidden p-4">
-          <div className="space-y-6">
-            <div className="h-48 bg-slate-800 rounded-lg animate-pulse"></div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-slate-800 rounded-lg animate-pulse"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right panel skeleton */}
-        <div className="hidden lg:flex lg:w-96 flex-col gap-4">
-          <div className="h-full bg-slate-900 rounded-lg border border-slate-700 p-4">
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-20 bg-slate-800 rounded-lg animate-pulse"></div>
-              ))}
-            </div>
-          </div>
+        <div className="hidden lg:flex lg:w-80 xl:w-96 flex-col gap-3 flex-shrink-0">
+          <div className="h-10 bg-slate-900 rounded-xl border border-slate-800 animate-pulse" />
+          <div className="flex-1 bg-slate-900 rounded-xl border border-slate-800 animate-pulse" />
         </div>
       </div>
     </div>
   );
 }
 
-export function FormLoadingState() {
+export function ErrorAlert({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="w-full space-y-4">
-      <div className="h-24 bg-slate-800 rounded-lg animate-pulse"></div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-20 bg-slate-800 rounded-lg animate-pulse"></div>
-        ))}
-      </div>
-      <div className="h-12 bg-blue-600 rounded-lg animate-pulse"></div>
-    </div>
-  );
-}
-
-export function ErrorAlert({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry?: () => void;
-}) {
-  return (
-    <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4">
+    <div className="bg-red-500/8 border border-red-500/25 rounded-2xl p-5 w-full max-w-md">
       <div className="flex items-start gap-3">
-        <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg
-            className="w-3 h-3 text-red-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clipRule="evenodd"
-            />
+        <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
         <div className="flex-1">
-          <h3 className="text-red-400 font-semibold text-sm mb-1">
-            Error generating trip
-          </h3>
-          <p className="text-red-300/80 text-sm">{message}</p>
+          <h3 className="text-red-400 font-semibold text-sm mb-1">Something went wrong</h3>
+          <p className="text-red-300/70 text-sm leading-relaxed">{message}</p>
           {onRetry && (
             <button
               onClick={onRetry}
-              className="mt-3 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded text-sm font-medium transition-colors"
+              className="mt-3 px-4 py-1.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition-colors border border-red-500/20"
             >
-              Try Again
+              Go Home
             </button>
           )}
         </div>
@@ -107,24 +65,12 @@ export function ErrorAlert({
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-4">
-      <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
-        <svg
-          className="w-8 h-8 text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          />
-        </svg>
+    <div className="flex flex-col items-center justify-center text-center px-6 py-12">
+      <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-4 text-3xl">
+        🗺️
       </div>
-      <h3 className="text-white font-semibold text-lg mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm max-w-xs">{description}</p>
+      <h3 className="text-white font-bold text-lg mb-2">{title}</h3>
+      <p className="text-gray-500 text-sm max-w-xs leading-relaxed">{description}</p>
     </div>
   );
 }

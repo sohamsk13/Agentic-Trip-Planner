@@ -1,136 +1,173 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Clock, MoreHorizontal } from 'lucide-react';
+import { Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPlanItem } from '@/lib/api';
 
-interface ItineraryTimelineProps {
+interface Props {
   itinerary: DayPlanItem[];
   selectedDayIndex?: number;
   onDayChange?: (index: number) => void;
 }
 
-const iconEmojis: Record<string, string> = {
-  hotel: '🏨',
-  beach: '🏖️',
-  food: '🍽️',
-  activity: '🎯',
-  sunset: '🌅',
-  transport: '✈️',
+const ICON_EMOJI: Record<string, string> = {
+  hotel: '🏨', beach: '🏖️', food: '🍽️',
+  activity: '🎯', sunset: '🌅', transport: '✈️',
 };
 
-const iconColors: Record<string, string> = {
-  hotel: 'bg-blue-500/20 text-blue-400',
-  beach: 'bg-cyan-500/20 text-cyan-400',
-  food: 'bg-orange-500/20 text-orange-400',
-  sunset: 'bg-red-500/20 text-red-400',
-  transport: 'bg-green-500/20 text-green-400',
-  activity: 'bg-purple-500/20 text-purple-400',
+const ICON_STYLE: Record<string, string> = {
+  hotel:     'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20',
+  beach:     'bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/20',
+  food:      'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20',
+  sunset:    'bg-rose-500/15 text-rose-400 ring-1 ring-rose-500/20',
+  transport: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20',
+  activity:  'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20',
 };
 
-export default function ItineraryTimeline({
-  itinerary,
-  selectedDayIndex = 0,
-  onDayChange,
-}: ItineraryTimelineProps) {
-  const selectedDay = itinerary[selectedDayIndex];
+export default function ItineraryTimeline({ itinerary, selectedDayIndex = 0, onDayChange }: Props) {
+  const safeIndex = Math.max(0, Math.min(selectedDayIndex, (itinerary?.length ?? 1) - 1));
+  const selectedDay = itinerary?.[safeIndex];
 
   if (!itinerary || itinerary.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-        No itinerary available
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8">
+        <div className="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-2xl">📅</div>
+        <p className="text-gray-400 font-medium">No itinerary available</p>
+        <p className="text-gray-600 text-sm">The AI didn&apos;t generate day-by-day plans for this trip.</p>
       </div>
     );
   }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Day selector tabs */}
-      <div className="flex gap-2 p-4 border-b border-slate-700 overflow-x-auto flex-shrink-0">
-        {itinerary.map((day, idx) => (
-          <Button
-            key={day.day_number ?? idx}
-            onClick={() => onDayChange?.(idx)}
-            variant={idx === selectedDayIndex ? 'default' : 'outline'}
-            className={`whitespace-nowrap px-4 py-2 rounded-lg font-semibold text-sm flex-shrink-0 ${
-              idx === selectedDayIndex
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-slate-800 border-slate-700 text-gray-300 hover:bg-slate-700'
-            }`}
+
+      {/* ── Day tabs ──────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 border-b border-slate-800">
+        {/* Mobile: prev/next nav */}
+        <div className="flex items-center gap-2 px-3 py-2 sm:hidden">
+          <button
+            onClick={() => onDayChange?.(Math.max(0, safeIndex - 1))}
+            disabled={safeIndex === 0}
+            className="p-1.5 rounded-lg bg-slate-800 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
           >
-            Day {day.day_number}: {day.title || `Day ${day.day_number}`}
-          </Button>
-        ))}
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1 text-center">
+            <p className="text-white font-semibold text-sm">
+              Day {selectedDay?.day_number} — {selectedDay?.title || `Day ${selectedDay?.day_number}`}
+            </p>
+            <p className="text-gray-500 text-xs">{safeIndex + 1} of {itinerary.length}</p>
+          </div>
+          <button
+            onClick={() => onDayChange?.(Math.min(itinerary.length - 1, safeIndex + 1))}
+            disabled={safeIndex === itinerary.length - 1}
+            className="p-1.5 rounded-lg bg-slate-800 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Desktop: scrollable tabs */}
+        <div className="hidden sm:flex gap-1.5 px-4 py-3 overflow-x-auto">
+          {itinerary.map((day, idx) => (
+            <button
+              key={day.day_number ?? idx}
+              onClick={() => onDayChange?.(idx)}
+              className={`flex-shrink-0 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                idx === safeIndex
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                  : 'bg-slate-800 text-gray-400 hover:bg-slate-700 hover:text-white border border-slate-700'
+              }`}
+            >
+              <span className="text-[10px] opacity-70 mr-1">Day {day.day_number}</span>
+              {day.title || `Day ${day.day_number}`}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Timeline content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* ── Day content ───────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto">
         {selectedDay && (
-          <div className="space-y-4">
-            {/* Day notes */}
-            {selectedDay.notes && (
-              <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <p className="text-blue-300 text-sm">{selectedDay.notes}</p>
+          <div className="p-4 space-y-3">
+
+            {/* Day header */}
+            <div className="flex items-center gap-3 pb-2">
+              <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm flex-shrink-0">
+                {selectedDay.day_number}
               </div>
-            )}
+              <div className="min-w-0">
+                <h2 className="text-white font-bold text-base leading-tight truncate">
+                  {selectedDay.title || `Day ${selectedDay.day_number}`}
+                </h2>
+                {selectedDay.notes && (
+                  <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{selectedDay.notes}</p>
+                )}
+              </div>
+              <div className="ml-auto flex-shrink-0 text-xs text-gray-600 bg-slate-800 px-2 py-1 rounded-lg border border-slate-700">
+                {selectedDay.activities.length} activities
+              </div>
+            </div>
 
-            {/* Activities */}
+            {/* Activities timeline */}
             {selectedDay.activities.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">No activities for this day</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <span className="text-3xl mb-2">📋</span>
+                <p className="text-gray-500 text-sm">No activities listed for this day</p>
+              </div>
             ) : (
-              selectedDay.activities.map((activity, idx) => {
-                const isLast = idx === selectedDay.activities.length - 1;
-                const colorClass = iconColors[activity.icon] ?? iconColors.activity;
+              <div className="space-y-2">
+                {selectedDay.activities.map((activity, idx) => {
+                  const isLast = idx === selectedDay.activities.length - 1;
+                  const iconStyle = ICON_STYLE[activity.icon] ?? ICON_STYLE.activity;
+                  const emoji = ICON_EMOJI[activity.icon] ?? '📍';
 
-                return (
-                  <div key={`${activity.title}-${idx}`} className="flex gap-4 relative">
-                    {/* Timeline connector */}
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg relative z-10 ${colorClass}`}>
-                        {iconEmojis[activity.icon] ?? '📍'}
+                  return (
+                    <div key={`${activity.title}-${idx}`} className="flex gap-3">
+                      {/* Timeline */}
+                      <div className="flex flex-col items-center flex-shrink-0 pt-1">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0 ${iconStyle}`}>
+                          {emoji}
+                        </div>
+                        {!isLast && (
+                          <div className="w-px flex-1 bg-gradient-to-b from-slate-700 to-transparent mt-1.5 min-h-[20px]" />
+                        )}
                       </div>
-                      {!isLast && (
-                        <div className="w-0.5 h-12 bg-gradient-to-b from-slate-600 to-transparent mt-2" />
-                      )}
-                    </div>
 
-                    {/* Activity card */}
-                    <div className="flex-1 pt-1.5">
-                      <Card className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span className="text-sm font-semibold text-white">{activity.time || '—'}</span>
+                      {/* Card */}
+                      <div className={`flex-1 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 rounded-xl p-3.5 transition-all cursor-default ${isLast ? 'mb-0' : 'mb-1'}`}>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="text-white font-semibold text-sm leading-snug flex-1">{activity.title}</h3>
+                          {activity.time && (
+                            <div className="flex items-center gap-1 text-gray-500 text-xs flex-shrink-0">
+                              <Clock className="w-3 h-3" />
+                              <span>{activity.time}</span>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white -mr-2">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <h3 className="text-base font-bold text-white mb-1">{activity.title}</h3>
-                          {activity.description && (
-                            <p className="text-sm text-gray-400">{activity.description}</p>
                           )}
-                          {activity.category && (
-                            <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-slate-700 text-gray-400 rounded-full capitalize">
-                              {activity.category}
-                            </span>
-                          )}
-                        </CardContent>
-                      </Card>
+                        </div>
+                        {activity.description && (
+                          <p className="text-gray-400 text-xs leading-relaxed">{activity.description}</p>
+                        )}
+                        {activity.category && activity.category !== 'activity' && (
+                          <span className="inline-block mt-2 text-[10px] px-2 py-0.5 bg-slate-700/80 text-gray-500 rounded-full capitalize border border-slate-600/50">
+                            {activity.category}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
 
             {/* End of day */}
-            <div className="flex justify-center pt-2">
-              <div className="px-4 py-2 bg-slate-800 rounded-full text-xs text-gray-400 border border-slate-700">
+            <div className="flex items-center gap-3 pt-2">
+              <div className="flex-1 h-px bg-slate-800" />
+              <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-slate-900 px-3 py-1.5 rounded-full border border-slate-800">
+                <MapPin className="w-3 h-3" />
                 End of Day {selectedDay.day_number}
               </div>
+              <div className="flex-1 h-px bg-slate-800" />
             </div>
           </div>
         )}

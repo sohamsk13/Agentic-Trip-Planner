@@ -1,27 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Share2, Check } from 'lucide-react';
 
-interface TripHeaderProps {
+interface Props {
   destination: string;
   mode: string;
   onModeChange: (mode: string) => void;
 }
 
-const modes = [
-  { id: 'chill', label: 'Chill', icon: '😎' },
-  { id: 'party', label: 'Party', icon: '🎉' },
-  { id: 'budget', label: 'Budget', icon: '💰' },
+const MODES = [
+  { id: 'chill',   label: 'Chill',   icon: '😎' },
+  { id: 'party',   label: 'Party',   icon: '🎉' },
+  { id: 'budget',  label: 'Budget',  icon: '💰' },
   { id: 'explore', label: 'Explore', icon: '🗺️' },
 ];
 
-export default function TripHeader({ destination, mode, onModeChange }: TripHeaderProps) {
+export default function TripHeader({ destination, mode, onModeChange }: Props) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const text = `Check out my AI-planned trip to ${destination}! 🌍`;
+    const text = `Check out my AI-planned trip to ${destination}! 🌍 — Made with TripPlurge`;
     try {
       if (navigator.share) {
         await navigator.share({ title: `Trip to ${destination}`, text });
@@ -34,41 +33,43 @@ export default function TripHeader({ destination, mode, onModeChange }: TripHead
   };
 
   return (
-    <header className="bg-slate-900 border-b border-slate-700 px-4 py-3">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-blue-400 text-xl flex-shrink-0">🌴</span>
-          <h1 className="text-xl font-bold text-white truncate">
-            {destination} Trip
-          </h1>
+    <header className="bg-slate-900/80 border-b border-slate-800 px-4 py-3 flex-shrink-0">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-xl flex-shrink-0">🌴</span>
+          <div className="min-w-0">
+            <h1 className="text-white font-bold text-lg leading-tight truncate">
+              {destination}
+            </h1>
+            <p className="text-gray-500 text-xs">AI-Generated Trip Plan</p>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={handleShare}
-          className="text-gray-400 hover:text-white flex-shrink-0 gap-1.5"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-gray-400 hover:text-white transition-all text-xs font-medium flex-shrink-0"
         >
-          {copied ? <Check className="w-4 h-4 text-green-400" /> : <Share2 className="w-4 h-4" />}
-          <span className="text-xs hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
-        </Button>
+          {copied
+            ? <><Check className="w-3.5 h-3.5 text-green-400" /><span className="text-green-400">Copied!</span></>
+            : <><Share2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Share</span></>
+          }
+        </button>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
-        {modes.map((m) => (
-          <Button
+      {/* Mode pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        {MODES.map((m) => (
+          <button
             key={m.id}
             onClick={() => onModeChange(m.id)}
-            variant={mode === m.id ? 'default' : 'outline'}
-            size="sm"
-            className={`whitespace-nowrap text-xs font-semibold flex-shrink-0 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               mode === m.id
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-slate-800 border-slate-700 text-gray-300 hover:bg-slate-700'
+                ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
+                : 'bg-slate-800 border border-slate-700 text-gray-400 hover:text-white hover:border-slate-600'
             }`}
           >
-            <span className="mr-1">{m.icon}</span>
-            {m.label}
-          </Button>
+            <span>{m.icon}</span>
+            <span>{m.label}</span>
+          </button>
         ))}
       </div>
     </header>
