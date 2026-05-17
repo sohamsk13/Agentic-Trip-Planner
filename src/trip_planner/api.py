@@ -24,15 +24,15 @@ app = FastAPI(
     ),
 )
 
-_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
 _allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -82,5 +82,6 @@ def run_server() -> None:
         "trip_planner.api:app",
         host="0.0.0.0",
         port=int(os.getenv("PORT", "8000")),
-        reload=os.getenv("RELOAD", "false").lower() == "true",
+        reload=os.getenv("RELOAD", "true").lower() == "true",
+        log_level="info",
     )
