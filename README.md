@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✈️ TripPlurge
+# ✈️ Agentic Trip Planner
 
 ### AI-Powered Trip Planner — Full Stack
 
@@ -19,9 +19,9 @@
 
 ---
 
-## What is TripPlurge?
+## What is Agentic Trip Planner?
 
-TripPlurge is a full-stack travel planning application that uses a **multi-agent AI pipeline** (powered by [crewAI](https://crewai.com) and Google Gemini) to generate complete, structured trip plans from a single natural-language prompt.
+Agentic Trip Planner is a full-stack travel planning application that uses a **multi-agent AI pipeline** (powered by [crewAI](https://crewai.com) and Google Gemini) to generate complete, structured trip plans from a single natural-language prompt.
 
 Demo : https://www.youtube.com/watch?v=Yl0o8kwsgtw 
 
