@@ -23,6 +23,11 @@
 
 TripPlurge is a full-stack travel planning application that uses a **multi-agent AI pipeline** (powered by [crewAI](https://crewai.com) and Google Gemini) to generate complete, structured trip plans from a single natural-language prompt.
 
+Demo : https://www.youtube.com/watch?v=Yl0o8kwsgtw 
+
+<img width="1907" height="906" alt="image" src="https://github.com/user-attachments/assets/6e50c59a-cccf-4630-bd94-0641aa09bd17" />
+
+
 Type _"5 days in Goa with beach and nightlife, ₹20,000 budget"_ and get back:
 
 - 📅 A detailed **day-by-day itinerary** with timed activities
