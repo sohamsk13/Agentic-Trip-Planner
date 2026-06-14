@@ -1,6 +1,11 @@
+
+
 # TripPlanner Crew
 
 Welcome to  TripPlanner Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+
+<img width="1903" height="900" alt="image" src="https://github.com/user-attachments/assets/ab9d77df-7ffb-4cf7-a112-d76d892d6c8f" />
+
 
 Demo: https://www.youtube.com/watch?v=Yl0o8kwsgtw
 
